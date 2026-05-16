@@ -1,28 +1,27 @@
 <#
 .SYNOPSIS
-    Onboarding script: copy templates và setup cấu trúc `colab/` trong project gốc
-    sau khi `git submodule add colab-venv-bootstrap colab/bootstrap`.
+    Onboarding script: copy templates and setup `colab/` structure in project root
+    after `git submodule add colab-venv-bootstrap colab/bootstrap`.
 
 .DESCRIPTION
-    Chạy script này TỪ submodule sau khi đã add vào project gốc. Script sẽ:
-      1. Verify đang chạy trong submodule context (parent có .git).
-      2. Copy templates/config.env.example → ../../config.env (nếu chưa có).
-      3. Copy notebooks/{00,01}.ipynb → ../../<file>.ipynb (nếu chưa có).
-      4. Copy templates/02_template.ipynb → ../../02_<task>.ipynb (hỏi task name).
-      5. Tạo thư mục ../../hooks/ + copy hooks/post_install.sh.example.
-      6. Print "next steps".
+    Run from project root after adding submodule. Script will:
+      1. Verify running in submodule context (parent has .git).
+      2. Copy templates/config.env.example -> ../../config.env (if missing).
+      3. Copy notebooks/{00,01}.ipynb -> ../../<file>.ipynb (if missing).
+      4. Copy templates/02_template.ipynb -> ../../02_<task>.ipynb (ask task name).
+      5. Create ../../hooks/ + copy hooks/post_install.sh.example.
+      6. Print next steps.
 
 .PARAMETER TaskName
-    Tên task cho notebook 02 (vd "train", "run_server", "infer"). Mặc định "task".
+    Task name for notebook 02 (e.g. "train", "run_server", "infer"). Default: "task".
 
 .PARAMETER Force
-    Overwrite các file đã tồn tại (mặc định: skip).
+    Overwrite existing files (default: skip).
 
 .PARAMETER NonInteractive
-    Không hỏi user (dùng giá trị mặc định cho TaskName).
+    No prompts (use default values).
 
 .EXAMPLE
-    # Từ project gốc, sau khi `git submodule add ... colab/bootstrap`
     .\colab\bootstrap\scripts\init_project.ps1
 
 .EXAMPLE
@@ -62,15 +61,15 @@ if (-not $ProjectRoot -or -not (Test-Path (Join-Path $ProjectRoot ".git"))) {
 }
 
 if ($IsDevMode) {
-    Write-Host "[INFO] Script đang chạy từ repo dev (không phải submodule context)." -ForegroundColor Yellow
+    Write-Host "[INFO] Script running from dev repo (not submodule context)." -ForegroundColor Yellow
     Write-Host ""
-    Write-Host "Script này chỉ có tác dụng khi đã add toolkit làm submodule trong project gốc:"
+    Write-Host "This script only works after adding toolkit as submodule in project root:"
     Write-Host ""
     Write-Host "  cd D:\path\to\my-project" -ForegroundColor Gray
     Write-Host "  git submodule add https://github.com/<user>/colab-venv-bootstrap colab/bootstrap" -ForegroundColor Gray
     Write-Host "  .\colab\bootstrap\scripts\init_project.ps1" -ForegroundColor Gray
     Write-Host ""
-    Write-Host "Hoặc nếu đây là context dev (bạn đang phát triển toolkit), script không cần chạy."
+    Write-Host "Or if this is dev context (developing the toolkit), no need to run."
     Write-Host ""
     exit 0
 }
@@ -91,8 +90,8 @@ $RequiredPaths = @(
 foreach ($rel in $RequiredPaths) {
     $full = Join-Path $SubmoduleRoot $rel
     if (-not (Test-Path $full)) {
-        Write-Host "[ERROR] Không tìm thấy: $full" -ForegroundColor Red
-        Write-Host "        Submodule có thể bị thiếu file. Chạy:" -ForegroundColor Red
+        Write-Host "[ERROR] Not found: $full" -ForegroundColor Red
+        Write-Host "        Submodule may be missing files. Run:" -ForegroundColor Red
         Write-Host "          git submodule update --init --recursive" -ForegroundColor Gray
         exit 1
     }
@@ -102,15 +101,15 @@ foreach ($rel in $RequiredPaths) {
 # Ask TaskName if interactive
 # ============================================================
 if (-not $TaskName -and -not $NonInteractive) {
-    Write-Host "Notebook 02 là notebook chính của project (vd train/run_server/infer)."
-    $input = Read-Host "Tên task cho notebook 02 [task]"
-    if ($input) { $TaskName = $input.Trim() }
+    Write-Host "Notebook 02 is the main task notebook (e.g. train/run_server/infer)."
+    $userInput = Read-Host "Task name for notebook 02 [task]"
+    if ($userInput) { $TaskName = $userInput.Trim() }
 }
 if (-not $TaskName) { $TaskName = "task" }
 
-# Sanitize: chỉ cho phép a-z 0-9 _
+# Sanitize: only a-z 0-9 _ allowed
 if ($TaskName -notmatch '^[a-zA-Z0-9_]+$') {
-    Write-Host "[ERROR] TaskName chỉ được chứa a-z, A-Z, 0-9, _" -ForegroundColor Red
+    Write-Host "[ERROR] TaskName must contain only a-z, A-Z, 0-9, _" -ForegroundColor Red
     exit 1
 }
 
@@ -144,28 +143,28 @@ function Copy-Template {
     if ((Test-Path $dst) -and -not $Force) {
         Write-Host "  [KEEP]  $Label" -ForegroundColor Gray
         Write-Host "          $dst" -ForegroundColor DarkGray
-        Write-Host "          (đã tồn tại — dùng -Force để ghi đè)" -ForegroundColor DarkGray
+        Write-Host "          (already exists - use -Force to overwrite)" -ForegroundColor DarkGray
         return $false
     }
 
     Copy-Item -Path $src -Destination $dst -Force
     Write-Host "  [COPY]  $Label" -ForegroundColor Green
-    Write-Host "          → $dst" -ForegroundColor DarkGray
+    Write-Host "          -> $dst" -ForegroundColor DarkGray
     return $true
 }
 
 # ============================================================
 # Copy templates
 # ============================================================
-Write-Host "[STEP] Copy templates → $ColabDir" -ForegroundColor Cyan
+Write-Host "[STEP] Copy templates -> $ColabDir" -ForegroundColor Cyan
 
 $copiedConfig = Copy-Template "templates/config.env.example" "config.env" "config.env"
 
-# Notebook 00 + 01 — generic
+# Notebook 00 + 01 (generic)
 $copied00 = Copy-Template "notebooks/00_clone_repo.ipynb" "00_clone_repo.ipynb" "00_clone_repo.ipynb"
 $copied01 = Copy-Template "notebooks/01_bootstrap_env.ipynb" "01_bootstrap_env.ipynb" "01_bootstrap_env.ipynb"
 
-# Notebook 02 — từ template
+# Notebook 02 (from template)
 $copied02 = Copy-Template "templates/02_template.ipynb" "02_$TaskName.ipynb" "02_$TaskName.ipynb"
 
 # Hooks folder
@@ -183,46 +182,37 @@ Write-Host ""
 # Print next steps
 # ============================================================
 Write-Host "==============================================" -ForegroundColor Cyan
-Write-Host " Setup hoàn tất — các bước tiếp theo" -ForegroundColor Cyan
+Write-Host " Setup completed - next steps" -ForegroundColor Cyan
 Write-Host "==============================================" -ForegroundColor Cyan
 Write-Host ""
 
 $step = 1
-Write-Host "${step}. Điền colab/config.env với PROJECT_SLUG, BASE_ROOT, PYTHON_BIN, requirements path, ..." -ForegroundColor White
+Write-Host "${step}. Edit colab/config.env: PROJECT_SLUG, BASE_ROOT, PYTHON_BIN, requirements path, ..." -ForegroundColor White
 Write-Host "   notepad `"$ColabDir\config.env`"" -ForegroundColor Gray
 Write-Host "   docs: $SubmoduleRoot\docs\config_reference.md" -ForegroundColor DarkGray
 Write-Host ""
 
 $step++
-Write-Host "${step}. (Tuỳ chọn) Viết hooks project-specific:" -ForegroundColor White
-Write-Host "   - colab/hooks/post_install.sh — chạy sau pip install (clone repo phụ, build Cython, ...)" -ForegroundColor Gray
-Write-Host "   - colab/hooks/verify_extra.sh — custom verify steps" -ForegroundColor Gray
+Write-Host "${step}. (Optional) Write project-specific hooks:" -ForegroundColor White
+Write-Host "   - colab/hooks/post_install.sh    (after pip install: clone subrepo, build Cython, ...)" -ForegroundColor Gray
+Write-Host "   - colab/hooks/verify_extra.sh    (custom verify steps)" -ForegroundColor Gray
 Write-Host "   docs: $SubmoduleRoot\docs\hooks_reference.md" -ForegroundColor DarkGray
-Write-Host "   Tham khảo: $SubmoduleRoot\examples\" -ForegroundColor DarkGray
+Write-Host "   References: $SubmoduleRoot\examples\" -ForegroundColor DarkGray
 Write-Host ""
 
-if (-not $copied00 -or -not $copied01 -or -not $copied02) {
-    $step++
-    Write-Host "${step}. ⚠ Một số notebook generic chưa được tạo trong submodule (Phase 2 - cần MCP Jupyter)." -ForegroundColor Yellow
-    Write-Host "   Tạm thời tham khảo notebook trong examples/ để tự tạo:" -ForegroundColor Gray
-    Write-Host "   - examples/piper-tts-finetuning/02_train.ipynb" -ForegroundColor DarkGray
-    Write-Host "   - examples/fastapi-server-cloudflared/02_run_server.ipynb" -ForegroundColor DarkGray
-    Write-Host ""
-}
-
 $step++
-Write-Host "${step}. Commit + push lên GitHub:" -ForegroundColor White
+Write-Host "${step}. Commit + push to GitHub:" -ForegroundColor White
 Write-Host "   git add ." -ForegroundColor Gray
 Write-Host "   git commit -m `"feat: integrate colab-venv-bootstrap`"" -ForegroundColor Gray
 Write-Host "   git push" -ForegroundColor Gray
 Write-Host ""
 
 $step++
-Write-Host "${step}. Trên Google Colab:" -ForegroundColor White
-Write-Host "   a) Mở colab/00_clone_repo.ipynb → clone/pull repo về Drive" -ForegroundColor Gray
-Write-Host "   b) Mở colab/01_bootstrap_env.ipynb → bootstrap venv" -ForegroundColor Gray
-Write-Host "   c) Mở colab/02_$TaskName.ipynb → chạy task chính" -ForegroundColor Gray
+Write-Host "${step}. On Google Colab:" -ForegroundColor White
+Write-Host "   a) Open colab/00_clone_repo.ipynb -> clone/pull repo to Drive" -ForegroundColor Gray
+Write-Host "   b) Open colab/01_bootstrap_env.ipynb -> bootstrap venv" -ForegroundColor Gray
+Write-Host "   c) Open colab/02_$TaskName.ipynb -> run main task" -ForegroundColor Gray
 Write-Host ""
 
-Write-Host "Hoàn tất. Chúc may mắn!" -ForegroundColor Green
+Write-Host "Done." -ForegroundColor Green
 Write-Host ""
