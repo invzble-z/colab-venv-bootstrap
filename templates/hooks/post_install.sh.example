@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+# ============================================================
+# post_install.sh — Project-specific steps SAU khi pip install
+# ============================================================
+# Hook này được gọi bởi bootstrap_env.sh sau khi cài requirements.
+# Dùng để: clone repo phụ, build C extension, swap package version, ...
+#
+# Env vars có sẵn (đã export bởi bootstrap):
+#   VENV_DIR            — đường dẫn venv (vd /content/venvs/<slug>)
+#   REPO_DIR            — đường dẫn project repo trên Drive
+#   DRIVE_ROOT          — artifacts root trên Drive
+#   PIP_CACHE_DIR       — pip cache dir
+#   HF_CACHE_DIR        — HuggingFace cache dir
+#   COLAB_DIR           — <project>/colab
+#   SUBMODULE_ROOT      — <project>/colab/bootstrap
+#   PROJECT_SLUG, BASE_ROOT
+#
+# Để enable hook:
+#   1. Rename file thành post_install.sh (bỏ đuôi .example)
+#   2. chmod +x post_install.sh (optional — bootstrap dùng `bash` để chạy)
+# ============================================================
+
+set -euo pipefail
+
+VENV_PY="$VENV_DIR/bin/python"
+
+# ------------------------------------------------------------
+# Ví dụ 1: Clone repo phụ
+# ------------------------------------------------------------
+# PIPER_REPO_DIR="$DRIVE_ROOT/external/piper"
+# if [ ! -d "$PIPER_REPO_DIR/.git" ]; then
+#     echo "[HOOK] Cloning rhasspy/piper"
+#     git clone --depth 1 https://github.com/rhasspy/piper.git "$PIPER_REPO_DIR"
+# fi
+# "$VENV_PY" -m pip install --no-deps -e "$PIPER_REPO_DIR/src/python"
+
+# ------------------------------------------------------------
+# Ví dụ 2: Build Cython extension
+# ------------------------------------------------------------
+# (
+#     export PATH="$VENV_DIR/bin:$PATH"
+#     cd "$PIPER_REPO_DIR/src/python"
+#     bash build_monotonic_align.sh
+# )
+
+# ------------------------------------------------------------
+# Ví dụ 3: Swap CPU → GPU build của onnxruntime
+# ------------------------------------------------------------
+# echo "[HOOK] Swapping onnxruntime → onnxruntime-gpu"
+# "$VENV_PY" -m pip uninstall -y onnxruntime onnxruntime-gpu 2>/dev/null || true
+# "$VENV_PY" -m pip install --cache-dir "$PIP_CACHE_DIR" onnxruntime-gpu
+
+# ------------------------------------------------------------
+# Ví dụ 4: Download model weights
+# ------------------------------------------------------------
+# MODEL_DIR="$DRIVE_ROOT/checkpoints"
+# if [ ! -f "$MODEL_DIR/model.bin" ]; then
+#     mkdir -p "$MODEL_DIR"
+#     "$VENV_PY" -c "
+# from huggingface_hub import hf_hub_download
+# hf_hub_download(repo_id='org/model', filename='model.bin', local_dir='$MODEL_DIR')
+# "
+# fi
+
+echo "[HOOK] post_install.sh done"

@@ -1,0 +1,23 @@
+# Default: auto-detect text vs binary
+* text=auto
+
+# Force LF for files chạy trên Linux (Colab) — Windows CRLF break bash interpreter.
+*.sh         text eol=lf
+*.py         text eol=lf
+*.ipynb      text eol=lf
+*.env        text eol=lf
+*.example    text eol=lf
+
+# Windows-only: giữ CRLF
+*.ps1        text eol=crlf
+*.cmd        text eol=crlf
+*.bat        text eol=crlf
+
+# Docs: cross-platform, để auto
+*.md         text
+*.json       text
+
+# Binary
+*.png        binary
+*.jpg        binary
+*.tar.gz     binary

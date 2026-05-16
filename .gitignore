@@ -216,3 +216,21 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# ============================================================
+# colab-venv-bootstrap specific
+# ============================================================
+
+# Local config với credentials — phải gitignore khi user vendor vào project gốc.
+# Trong toolkit này, examples/*/config.env được commit (đã sanitized, không token).
+config.env
+
+# Artifacts runtime — không thuộc về toolkit
+venvs/
+*.tar.gz
+fingerprint.json
+*.lock.txt
+
+# IDE
+.idea/
+.vscode/
