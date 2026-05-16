@@ -224,6 +224,7 @@ __marimo__/
 # Local config với credentials — phải gitignore khi user vendor vào project gốc.
 # Trong toolkit này, examples/*/config.env được commit (đã sanitized, không token).
 config.env
+!examples/**/config.env
 
 # Artifacts runtime — không thuộc về toolkit
 venvs/
